@@ -442,7 +442,11 @@ class advanced_search extends rcube_plugin
         $layout_table->add(
             null,
             $this->i18n_strings['in'] . ': ' .
+	    /** 20220824 GWustenstein - RCv1.6 incompatibility:
             $this->folder_selector($folderConfig)->show($this->rc->storage->get_folder()) .
+            */
+            $this->rc->folder_selector($folderConfig)->show($this->rc->storage->get_folder()) .
+            // ...fixed
             html::span(
                 array('class' => 'sub-folders'),
                 $this->i18n_strings['andsubfolders'] . ': ' .
@@ -537,7 +541,10 @@ class advanced_search extends rcube_plugin
 
         return $row_html;
     }
-
+    /** 20220824 GWustenstein - This code appears to be a reimplemented core 
+    *   function and not compatible with RCv1.6, seems non-critical to the
+    *   functionality of the Advanced Search plugin.
+    */
     /**
      * Return folders list as html_select object
      *
@@ -548,6 +555,7 @@ class advanced_search extends rcube_plugin
      *
      * @return html_select HTML drop-down object
      */
+    /**	
     public function folder_selector($p = array())
     {
         $p += array('maxlength' => 100, 'realnames' => false, 'is_escaped' => true);
@@ -568,7 +576,8 @@ class advanced_search extends rcube_plugin
 
         return $select;
     }
-
+    */
+    
     public function trigger_search_pagination()
     {
         $_GET['search'] = $_SESSION['av_search'];
@@ -583,6 +592,7 @@ class advanced_search extends rcube_plugin
      * @access public
      * @return null
      */
+    // 20220824 GWustenstein - RCv1.6 incompatibility; ***FIXME*** to clean up obsolete/unused code, do a special column for advanced search (maybe)	
     public function trigger_search($inPagination = false)
     {
         $search = rcube_utils::get_input_value('search', rcube_utils::INPUT_GPC);
@@ -596,7 +606,9 @@ class advanced_search extends rcube_plugin
         if (!empty($search)) {
             $mbox = rcube_utils::get_input_value('folder', rcube_utils::INPUT_GPC);
             $imap_charset = RCUBE_CHARSET;
+	    /** 20220824 GWustenstein - RCv1.6 incompatibility; $sort_column also appears to be unused
             $sort_column = rcmail_sort_column();
+	    */
             $search_str = $this->get_search_query($search);
             $sub_folders = rcube_utils::get_input_value('sub_folders', rcube_utils::INPUT_GPC) == 'true';
             $folders = array();
@@ -649,15 +661,26 @@ class advanced_search extends rcube_plugin
             $this->rc->output->set_env('messagecount', $count);
             $this->rc->output->set_env('pagecount', ceil($count / $pagesize));
             $this->rc->output->set_env('exists', $this->rc->storage->count($current_folder, 'EXISTS'));
+	    /** 20220824 GWustenstein - RCv1.6 incompatibility
             $this->rc->output->command('set_rowcount', rcmail_get_messagecount_text($count, $page));
+	    */
+	    $this->rc->output->command('set_rowcount', rcmail_action_mail_index::get_messagecount_text($count, $page));
+	    // ...fixed
             $this->rc->output->command('plugin.search_complete');
             $this->rc->output->send();
         }
     }
 
+    /* 20220824 GWustenstein - RCv1.6 incompatibility:  Appears to be another 
+    *  reimplemented stock function.  Appears to merge in additional column data on a
+    *  selective basis, could just as well be done prior to the stock function call.
+    *  Too lazy to do this and appears to be of questionable benefit, sorry!
+    /**
+  
     /**
      * return javascript commands to add rows to the message list
      */
+    /**
     public function rcmail_js_message_list($a_headers, $insert_top = false, $a_show_cols = null, $avmbox = false, $avcols = array(), $showMboxColumn = false)
     {
         global $CONFIG, $RCMAIL, $OUTPUT;
@@ -803,6 +826,7 @@ class advanced_search extends rcube_plugin
 
         return $uid_mboxes;
     }
+    */
 
     private function do_pagination($folders, $onPage)
     {
@@ -1019,8 +1043,13 @@ class advanced_search extends rcube_plugin
                 $showAvmbox = true;
             }
         }
-		
+
+	/* 20220824 GWustenstein - RCv1.6 incompatibility: Reverted to stock call and eliminated extra column merge
+	*  to the customized call.  Maybe will update later with the column merge prior to the call, but likely not.
         $uid_mboxes = $this->rcmail_js_message_list($messages, false, null, $showAvmbox, $avbox, $showMboxColumn);
+	*/
+        $uid_mboxes = rcmail_action_mail_index::js_message_list($messages, false, null);
+	// ...fixed
 
         return $uid_mboxes;
     }
